@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asrama-Sync Health Tracker (Advanced Analytics)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #10b981; border-radius: 10px; }
+        #camera-preview { transform: scaleX(-1); }
+        .ana-btn.active { background-color: white; color: #059669; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+    <!-- Navigation -->
+    <nav class="bg-emerald-600 text-white p-4 shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto flex flex-col md:flex-row justify-between items-center gap-2">
+            <div class="flex flex-col">
+                <h1 class="text-xl font-bold flex items-center gap-2">
+                    <i data-lucide="heart-pulse"></i> Asrama-Sync
+                </h1>
+                <p class="text-[10px] opacity-80 font-medium">Divisi Kesehatan HSI Boarding School Purworejo</p>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <div class="hidden md:flex flex-col items-end mr-2 border-r border-white/20 pr-3">
+                    <span class="text-[9px] uppercase tracking-wider opacity-70">Ketua Divisi</span>
+                    <span class="text-xs font-bold">Aulia Rahman</span>
+                </div>
+
+                <div id="admin-status" class="hidden flex items-center gap-1 bg-white/20 px-3 py-1 rounded-full text-[10px] font-bold border border-white/30">
+                    <span class="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span> ADMIN AKTIF
+                    <button onclick="logoutAdmin()" class="ml-1 hover:text-red-200"><i data-lucide="log-out" class="w-3 h-3"></i></button>
+                </div>
+                <button onclick="toggleSection('main-app')" class="text-xs bg-emerald-700 px-3 py-1 rounded-full hover:bg-emerald-800 transition">Input & Log</button>
+                <button onclick="toggleSection('analytics-view')" class="text-xs bg-white text-emerald-600 px-3 py-1 rounded-full font-bold hover:bg-slate-100 transition">Statistik</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- MAIN APP SECTION -->
+    <main id="main-app" class="container mx-auto p-4 md:p-6 lg:max-w-6xl">
+        
+        <!-- Dashboard Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-emerald-500">
+                <p class="text-sm text-slate-500 font-medium">Ibnul Qayyim</p>
+                <h2 id="stat-iq" class="text-3xl font-bold text-emerald-600">0</h2>
+                <p class="text-xs text-slate-400">Santri Sakit Saat Ini</p>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-blue-500">
+                <p class="text-sm text-slate-500 font-medium">Ibnu Taimiyah</p>
+                <h2 id="stat-it" class="text-3xl font-bold text-blue-600">0</h2>
+                <p class="text-xs text-slate-400">Santri Sakit Saat Ini</p>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-purple-500">
+                <p class="text-sm text-slate-500 font-medium">Ibnu Katsir</p>
+                <h2 id="stat-ik" class="text-3xl font-bold text-purple-600">0</h2>
+                <p class="text-xs text-slate-400">Santri Sakit Saat Ini</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Form Input -->
+            <div class="lg:col-span-1">
+                <div class="bg-white p-6 rounded-2xl shadow-md">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="plus-circle" class="text-emerald-500"></i> Input Data
+                    </h3>
+                    <form id="healthForm" class="space-y-4">
+                        <div class="relative bg-slate-100 rounded-xl overflow-hidden aspect-video flex flex-col items-center justify-center border-2 border-dashed border-slate-300">
+                            <video id="camera-preview" autoplay playsinline class="hidden w-full h-full object-cover"></video>
+                            <img id="photo-result" class="hidden w-full h-full object-cover">
+                            <div id="camera-placeholder" class="text-center p-4">
+                                <i data-lucide="camera" class="w-10 h-10 text-slate-400 mx-auto mb-2"></i>
+                                <p class="text-xs text-slate-500">Foto santri/obat</p>
+                            </div>
+                            <div class="absolute bottom-2 left-0 right-0 flex justify-center gap-2 px-2">
+                                <button type="button" id="start-camera" class="bg-emerald-600 text-white p-2 rounded-full shadow-lg"><i data-lucide="video" class="w-4 h-4"></i></button>
+                                <button type="button" id="take-photo" class="hidden bg-white text-emerald-600 p-2 rounded-full shadow-lg"><i data-lucide="aperture" class="w-4 h-4"></i></button>
+                                <button type="button" id="retake-photo" class="hidden bg-red-600 text-white p-2 rounded-full shadow-lg"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Nama Santri</label>
+                            <input type="text" id="namaSantri" required placeholder="Nama Lengkap" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Pilih Asrama</label>
+                            <select id="asrama" required class="w-full p-3 border rounded-xl outline-none">
+                                <option value="Ibnul Qayyim">Ibnul Qayyim</option>
+                                <option value="Ibnu Taimiyah">Ibnu Taimiyah</option>
+                                <option value="Ibnu Katsir">Ibnu Katsir</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Diagnosa / Keluhan</label>
+                            <textarea id="diagnosa" required placeholder="Contoh: Batuk, Demam" class="w-full p-3 border rounded-xl outline-none h-20"></textarea>
+                        </div>
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg active:scale-95">Simpan Data</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- List Data -->
+            <div class="lg:col-span-2">
+                <div class="bg-white p-6 rounded-2xl shadow-md min-h-[500px]">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                        <h3 class="text-lg font-semibold">Log Harian</h3>
+                        <input type="text" id="searchInput" placeholder="Cari santri..." class="w-full md:w-64 pl-4 pr-4 py-2 border rounded-full text-sm outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div class="space-y-4" id="logContainer"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ANALYTICS SECTION -->
+    <main id="analytics-view" class="container mx-auto p-4 md:p-6 lg:max-w-6xl hidden">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-slate-800">Analisis Kesehatan</h2>
+            <div class="flex gap-1 p-1 bg-slate-200 rounded-xl">
+                <button onclick="updateAnalytics('pekan')" class="ana-btn active px-4 py-2 rounded-lg text-xs font-bold transition">Pekan</button>
+                <button onclick="updateAnalytics('bulan')" class="ana-btn px-4 py-2 rounded-lg text-xs font-bold transition">Bulan</button>
+                <button onclick="updateAnalytics('total')" class="ana-btn px-4 py-2 rounded-lg text-xs font-bold transition">Total</button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- ASRAMA TERBANYAK SAKIT -->
+            <div class="bg-white p-6 rounded-3xl shadow-lg border border-red-100 flex flex-col">
+                <div class="mb-6 flex items-center gap-2 text-red-600">
+                    <i data-lucide="building-2"></i>
+                    <h3 class="font-bold">Asrama Terbanyak Sakit</h3>
+                </div>
+                <div id="asrama-stats-list" class="space-y-6 flex-1">
+                    <!-- Dinamis via JS -->
+                </div>
+                <p class="text-[10px] text-slate-400 mt-6 text-center italic">*Berdasarkan akumulasi laporan masuk</p>
+            </div>
+
+            <!-- SANTRI SERING SAKIT -->
+            <div class="bg-white p-6 rounded-3xl shadow-lg border border-emerald-100">
+                <div class="mb-6 flex items-center gap-2 text-emerald-600">
+                    <i data-lucide="users"></i>
+                    <h3 class="font-bold">Santri Sering Sakit</h3>
+                </div>
+                <div id="santri-stats-list" class="space-y-6">
+                    <!-- Dinamis via JS -->
+                </div>
+            </div>
+
+            <!-- TREN PENYAKIT -->
+            <div class="bg-white p-6 rounded-3xl shadow-lg border border-blue-100">
+                <div class="mb-6 flex items-center gap-2 text-blue-600">
+                    <i data-lucide="thermometer"></i>
+                    <h3 class="font-bold">Tren Keluhan</h3>
+                </div>
+                <div id="disease-stats-list" class="space-y-6">
+                    <!-- Dinamis via JS -->
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 bg-white p-6 rounded-3xl shadow-lg border border-red-50">
+            <h4 class="text-red-600 font-bold mb-2 flex items-center gap-2">
+                <i data-lucide="alert-triangle"></i> Zona Bahaya
+            </h4>
+            <p class="text-xs text-slate-500 mb-4">Reset ini akan menghapus permanen semua histori.</p>
+            <button onclick="initiateDelete('full')" class="bg-red-50 text-red-600 px-6 py-3 rounded-xl text-sm font-bold border border-red-200 hover:bg-red-600 hover:text-white transition-all">
+                Reset Database Tahunan
+            </button>
+        </div>
+    </main>
+
+    <!-- Modal PIN Admin -->
+    <div id="pinModal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center p-4 z-[100] backdrop-blur-sm">
+        <div class="bg-white p-8 rounded-3xl max-w-sm w-full shadow-2xl text-center border border-slate-200">
+            <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="shield-check" class="w-8 h-8"></i>
+            </div>
+            <h4 class="text-xl font-bold mb-2">Izin Diperlukan</h4>
+            <p class="text-slate-500 mb-6 text-sm">Masukkan PIN Admin untuk mengakses fitur penghapusan.</p>
+            <input type="password" id="adminPin" placeholder="PIN" class="w-full text-center p-3 border rounded-2xl mb-4 outline-none focus:ring-2 focus:ring-emerald-500 uppercase font-bold tracking-widest text-lg">
+            <div id="errorMessage" class="hidden text-red-500 text-xs font-bold mb-4">PIN SALAH! Akses Ditolak.</div>
+            <div class="flex gap-3">
+                <button onclick="closePinModal()" class="flex-1 py-3 bg-slate-100 rounded-2xl font-bold">Batal</button>
+                <button onclick="verifyAdminPin()" class="flex-1 py-3 bg-emerald-600 text-white rounded-2xl font-bold shadow-lg">Login</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Canvas -->
+    <canvas id="watermark-canvas" class="hidden"></canvas>
+
+    <script>
+        const ADMIN_SECRET_PIN = "SYNC123";
+        let isAdminActive = false;
+        let allData = JSON.parse(localStorage.getItem('asrama_sync_v3_data')) || [];
+        let capturedPhoto = null;
+        let pendingAction = null;
+        
+        const video = document.getElementById('camera-preview');
+        const photoResult = document.getElementById('photo-result');
+        const canvas = document.getElementById('watermark-canvas');
+
+        function toggleSection(id) {
+            document.getElementById('main-app').classList.add('hidden');
+            document.getElementById('analytics-view').classList.add('hidden');
+            document.getElementById(id).classList.remove('hidden');
+            if(id === 'analytics-view') updateAnalytics('pekan');
+        }
+
+        // Camera Utils
+        document.getElementById('start-camera').onclick = async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                video.srcObject = stream;
+                video.classList.remove('hidden');
+                document.getElementById('camera-placeholder').classList.add('hidden');
+                document.getElementById('start-camera').classList.add('hidden');
+                document.getElementById('take-photo').classList.remove('hidden');
+            } catch (err) { alert("Izinkan akses kamera"); }
+        };
+
+        document.getElementById('take-photo').onclick = () => {
+            const ctx = canvas.getContext('2d');
+            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+            capturedPhoto = canvas.toDataURL('image/jpeg', 0.6);
+            photoResult.src = capturedPhoto;
+            photoResult.classList.remove('hidden');
+            video.classList.add('hidden');
+            document.getElementById('take-photo').classList.add('hidden');
+            document.getElementById('retake-photo').classList.remove('hidden');
+            video.srcObject.getTracks().forEach(t => t.stop());
+        };
+
+        document.getElementById('retake-photo').onclick = () => {
+            capturedPhoto = null;
+            photoResult.classList.add('hidden');
+            document.getElementById('retake-photo').classList.add('hidden');
+            document.getElementById('start-camera').classList.remove('hidden');
+            document.getElementById('camera-placeholder').classList.remove('hidden');
+        };
+
+        // Form Submit
+        document.getElementById('healthForm').onsubmit = (e) => {
+            e.preventDefault();
+            const newData = {
+                id: Date.now().toString(),
+                nama: document.getElementById('namaSantri').value.trim(),
+                asrama: document.getElementById('asrama').value,
+                diagnosa: document.getElementById('diagnosa').value,
+                foto: capturedPhoto,
+                status: 'Sakit',
+                timestamp: new Date().toISOString()
+            };
+            allData.unshift(newData);
+            saveData();
+            e.target.reset(); 
+            document.getElementById('retake-photo').click();
+            renderData(); updateStats();
+        };
+
+        function saveData() { localStorage.setItem('asrama_sync_v3_data', JSON.stringify(allData)); }
+
+        function updateStats() {
+            const counts = { "Ibnul Qayyim": 0, "Ibnu Taimiyah": 0, "Ibnu Katsir": 0 };
+            allData.forEach(d => { if(d.status === 'Sakit') counts[d.asrama]++; });
+            document.getElementById('stat-iq').innerText = counts["Ibnul Qayyim"];
+            document.getElementById('stat-it').innerText = counts["Ibnu Taimiyah"];
+            document.getElementById('stat-ik').innerText = counts["Ibnu Katsir"];
+        }
+
+        function renderData() {
+            const term = document.getElementById('searchInput').value.toLowerCase();
+            const list = allData.filter(d => d.nama.toLowerCase().includes(term));
+            
+            document.getElementById('logContainer').innerHTML = list.length === 0 ? 
+                `<div class="text-center py-20 text-slate-300">Data tidak ditemukan</div>` :
+                list.map(item => `
+                <div class="bg-white border p-4 rounded-2xl flex gap-4 items-center">
+                    <img src="${item.foto || 'https://via.placeholder.com/100?text=No+Image'}" class="w-16 h-16 rounded-xl object-cover bg-slate-100">
+                    <div class="flex-1">
+                        <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-500">${item.asrama}</span>
+                        <h4 class="font-bold text-slate-800">${item.nama}</h4>
+                        <p class="text-xs text-slate-400">${item.diagnosa}</p>
+                    </div>
+                    <div class="flex flex-col items-end gap-2">
+                        <button onclick="toggleSembuh('${item.id}')" class="px-3 py-1 text-[10px] rounded-full font-bold ${item.status === 'Sakit' ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}">
+                            ${item.status}
+                        </button>
+                        <button onclick="initiateDelete('single', '${item.id}')" class="text-slate-200 hover:text-red-500 p-1">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        window.toggleSembuh = (id) => {
+            allData = allData.map(d => d.id === id ? {...d, status: d.status === 'Sakit' ? 'Sembuh' : 'Sakit'} : d);
+            saveData(); renderData(); updateStats();
+        };
+
+        // Admin Security
+        window.initiateDelete = (type, id = null) => {
+            pendingAction = { type, id };
+            if (isAdminActive) executePendingAction();
+            else {
+                document.getElementById('pinModal').classList.remove('hidden');
+                document.getElementById('adminPin').focus();
+            }
+        };
+
+        window.verifyAdminPin = () => {
+            if (document.getElementById('adminPin').value === ADMIN_SECRET_PIN) {
+                isAdminActive = true;
+                document.getElementById('admin-status').classList.remove('hidden');
+                executePendingAction();
+                closePinModal();
+            } else {
+                document.getElementById('errorMessage').classList.remove('hidden');
+                document.getElementById('adminPin').value = "";
+            }
+        };
+
+        function executePendingAction() {
+            if (!pendingAction) return;
+            if (pendingAction.type === 'single') allData = allData.filter(d => d.id !== pendingAction.id);
+            else if (pendingAction.type === 'full') { allData = []; location.reload(); }
+            saveData(); renderData(); updateStats();
+            pendingAction = null;
+        }
+
+        window.logoutAdmin = () => { isAdminActive = false; document.getElementById('admin-status').classList.add('hidden'); };
+        window.closePinModal = () => { document.getElementById('pinModal').classList.add('hidden'); document.getElementById('errorMessage').classList.add('hidden'); pendingAction = null; };
+
+        // ANALYTICS (DENGAN PERBANDINGAN ASRAMA)
+        function updateAnalytics(range) {
+            document.querySelectorAll('.ana-btn').forEach(b => b.classList.toggle('active', b.innerText.toLowerCase().includes(range)));
+
+            const now = new Date();
+            let filtered = allData;
+            if(range === 'pekan') filtered = allData.filter(d => (now - new Date(d.timestamp)) < 7 * 86400000);
+            else if(range === 'bulan') filtered = allData.filter(d => new Date(d.timestamp).getMonth() === now.getMonth());
+
+            const totalGlobal = filtered.length || 1;
+
+            // 1. STATS ASRAMA
+            const asramaCount = { "Ibnul Qayyim": 0, "Ibnu Taimiyah": 0, "Ibnu Katsir": 0 };
+            filtered.forEach(d => { if(asramaCount.hasOwnProperty(d.asrama)) asramaCount[d.asrama]++; });
+            
+            const sortedAsrama = Object.entries(asramaCount).sort((a,b) => b[1] - a[1]);
+            document.getElementById('asrama-stats-list').innerHTML = sortedAsrama.map(([asrama, count]) => {
+                const percent = Math.round((count / totalGlobal) * 100);
+                const barColor = asrama === sortedAsrama[0][0] && count > 0 ? 'bg-red-500' : 'bg-slate-300';
+                return `
+                    <div>
+                        <div class="flex justify-between items-end mb-2">
+                            <span class="text-sm font-bold text-slate-700">${asrama}</span>
+                            <span class="text-xs font-bold ${count > 0 ? 'text-red-600' : 'text-slate-400'}">${count} Kasus</span>
+                        </div>
+                        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                            <div class="${barColor} h-full rounded-full transition-all duration-700" style="width: ${percent}%"></div>
+                        </div>
+                        <div class="text-[9px] text-slate-400 mt-1">${percent}% dari total sakit</div>
+                    </div>
+                `;
+            }).join('');
+
+            // 2. STATS SANTRI
+            const santriCount = {};
+            filtered.forEach(d => { santriCount[d.nama] = (santriCount[d.nama] || 0) + 1; });
+            const sortedSantri = Object.entries(santriCount).sort((a,b) => b[1] - a[1]).slice(0, 5);
+            document.getElementById('santri-stats-list').innerHTML = sortedSantri.map(([nama, count]) => `
+                <div class="flex justify-between items-center bg-emerald-50 p-3 rounded-xl">
+                    <span class="text-sm font-medium text-emerald-900 truncate pr-2">${nama}</span>
+                    <span class="bg-white px-3 py-1 rounded-lg text-xs font-bold text-emerald-600 shadow-sm">${count}x</span>
+                </div>
+            `).join('') || '<p class="text-center text-slate-300 py-4 text-xs">Belum ada data</p>';
+
+            // 3. STATS PENYAKIT
+            const diseaseCount = {};
+            filtered.forEach(d => {
+                d.diagnosa.split(/[,;]/).map(s => s.trim().toLowerCase()).filter(s => s).forEach(p => {
+                    diseaseCount[p] = (diseaseCount[p] || 0) + 1;
+                });
+            });
+            const sortedDisease = Object.entries(diseaseCount).sort((a,b) => b[1] - a[1]).slice(0, 5);
+            document.getElementById('disease-stats-list').innerHTML = sortedDisease.map(([penyakit, count]) => `
+                <div class="flex justify-between items-center border-b border-blue-50 py-2">
+                    <span class="text-sm capitalize text-slate-600">${penyakit}</span>
+                    <span class="text-xs font-bold text-blue-600">${count}</span>
+                </div>
+            `).join('') || '<p class="text-center text-slate-300 py-4 text-xs">Belum ada data</p>';
+            
+            lucide.createIcons();
+        }
+
+        window.onload = () => { renderData(); updateStats(); lucide.createIcons(); };
+        document.getElementById('searchInput').oninput = renderData;
+    </script>
+</body>
+</html>
